@@ -3,12 +3,6 @@
 
 use serde::Serialize;
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 // 读取指定目录下的所有文件
 #[tauri::command]
 fn scan_files_in_directory(path: &str) -> Vec<MusicFile> {
@@ -50,7 +44,7 @@ fn play() {
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let sink = Sink::try_new(&stream_handle).unwrap();
 
-    let file = BufReader::new(File::open("examples/吕口口 - 希望你被这个世界爱着.mp3").unwrap());
+    let file = BufReader::new(File::open("E://music/满满-刘若英.flac").unwrap());
     let source = Decoder::new(file).unwrap();
 
     sink.append(source);
@@ -64,7 +58,6 @@ fn play() {
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            greet,
             play,
             scan_files_in_directory
         ])

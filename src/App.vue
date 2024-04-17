@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import Greet from "./components/Greet.vue";
+import Music from "./components/Music.vue";
 </script>
 
 <template>
   <div class="container">
-    <Greet />
+    <Music />
   </div>
 </template>
 

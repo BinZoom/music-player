@@ -25,22 +25,12 @@
       @change="changeProgress"
     ></el-slider>
   </div>
-
-  <!-- <form class="row" @submit.prevent="greet">
-    <input id="greet-input" v-model="name" placeholder="Enter a name..." />
-    <button type="submit">Greet</button>
-  </form>
-
-  <p>{{ greetMsg }}</p> -->
 </template>
 
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
-
-const greetMsg = ref("");
-const name = ref("");
 
 const isPlaying = ref(false); // 是否正在播放
 const currentProgress = ref(0); // 当前歌曲进度
@@ -73,7 +63,7 @@ const changeProgress = (value: number) => {
 
 const getFileList = () => {
   invoke("scan_files_in_directory", {
-    path: "examples/",
+    path: "E://music/",
   }).then((res: any) => {
     console.log(res);
     tableData.value = res;
@@ -83,9 +73,4 @@ const getFileList = () => {
 onMounted(() => {
   getFileList();
 });
-
-// async function greet() {
-//   // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-//   tableData.value = await invoke("greet", { name: name.value });
-// }
 </script>
