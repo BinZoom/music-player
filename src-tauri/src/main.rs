@@ -1,10 +1,42 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use serde::Serialize;
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
+}
+
+// 读取指定目录下的所有文件
+#[tauri::command]
+fn scan_files_in_directory(path: &str) -> Vec<MusicFile> {
+    use std::fs;
+
+    match fs::read_dir(path) {
+        Ok(entries) => entries
+            .filter_map(|entry| {
+                entry.ok().and_then(|entry| {
+                    entry
+                        .file_name()
+                        .into_string()
+                        .ok()
+                        .map(|file_name| MusicFile { file_name })
+                })
+            })
+            .collect(),
+        Err(_) => {
+            eprintln!("Failed to read directory '{}'.", path);
+            Vec::new()
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[derive(Debug)]
+pub struct MusicFile {
+    pub file_name: String,
 }
 
 // 以指令的形式暴露给前端应用
@@ -31,8 +63,20 @@ fn play() {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet])
-        .invoke_handler(tauri::generate_handler![play])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            play,
+            scan_files_in_directory
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+mod unit_tests {
+    #[test]
+    fn test_scan_files_in_directory() {
+        use crate::scan_files_in_directory;
+        let m1 = scan_files_in_directory("examples/");
+        println!("{:?}", m1);
+    }
 }
