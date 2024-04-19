@@ -1,9 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use audio_service::AudioEvent;
 use audio_service::AudioService;
 use serde::Serialize;
-use audio_service::AudioEvent;
 use tokio::sync::broadcast::Sender;
 
 mod audio_service {
@@ -38,9 +38,9 @@ mod audio_service {
             // Spawn a task to receive and process events
             tokio::spawn(async move {
                 while let Ok(event) = event_receiver.recv().await {
+                    println!("tokio Received event");
                     match event {
                         AudioEvent::Play(file_path) => {
-                            //
                             Self::play_audio(&file_path, &sink_clone).await;
                         }
                         AudioEvent::Pause => {
@@ -54,11 +54,13 @@ mod audio_service {
         }
 
         async fn play_audio(file_path: &str, sink: &Arc<Mutex<Sink>>) {
+            println!("start play {}",file_path);
             let sink = sink.lock().unwrap();
-            // TODO: exception handling
             let file = BufReader::new(File::open(file_path).unwrap());
             let source = Decoder::new(file).unwrap();
             sink.append(source);
+            sink.sleep_until_end();
+            println!("end play");
         }
 
         async fn pause_audio(sink: &Arc<Mutex<Sink>>) {
@@ -68,16 +70,15 @@ mod audio_service {
     }
 }
 
-
 #[tauri::command]
 fn handle_event(sender: tauri::State<Sender<AudioEvent>>, event: String) {
-    println!("Received event: {}", event);
     let event: serde_json::Value = serde_json::from_str(&event).unwrap();
     if let Some(action) = event["action"].as_str() {
         match action {
             "play" => {
                 if let Some(file_path) = event["file_path"].as_str() {
                     sender.send(AudioEvent::Play(file_path.to_owned())).unwrap();
+                    println!("send event: {}", file_path);
                 }
                 // 可能还需要处理文件路径为空的情况
             }
@@ -139,5 +140,24 @@ mod unit_tests {
         use crate::scan_files_in_directory;
         let m1 = scan_files_in_directory("E://music/");
         println!("{:?}", m1);
+    }
+
+    #[test]
+    fn test_rodio() {
+        use rodio::{Decoder, OutputStream, Sink};
+        use std::fs::File;
+        use std::io::BufReader;
+
+        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+        let sink = Sink::try_new(&stream_handle).unwrap();
+
+        // Add a dummy source of the sake of the example.
+        let file = BufReader::new(File::open("E://music/任然-飞鸟和蝉.flac").unwrap());
+        let source = Decoder::new(file).unwrap();
+        sink.append(source);
+
+        // The sound plays in a separate thread. This call will block the current thread until the sink
+        // has finished playing all its queued sounds.
+        sink.sleep_until_end();
     }
 }
