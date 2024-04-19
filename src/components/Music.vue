@@ -1,13 +1,13 @@
 <template>
   <div class="content">
     <div class="music-container">
-      <el-table :data="tableData" style="width: 100%" size="small">
-        <el-table-column label="No" width="40px">
+      <el-table :data="tableData" style="width: 100%;" size="small" :show-header="false">
+        <el-table-column width="40px">
           <template #default="{ $index }">
             {{ $index + 1 }}
           </template>
         </el-table-column>
-        <el-table-column prop="file_name" label="Name" />
+        <el-table-column prop="file_name" />
         <el-table-column width="100">
           <template #default="{ row }">
             <el-button
@@ -148,4 +148,20 @@ onMounted(() => {
 .no-shadow {
   box-shadow: none !important;
 }
+
+
+::v-deep .el-table--border th.el-table__cell,
+::v-deep .el-table td.el-table__cell {
+  border-bottom: none !important;
+}
+ 
+::v-deep .el-table--border .el-table__cell {
+  border-right:none !important;
+}
+ 
+::v-deep .el-table--group, .el-table--border{
+  border: none !important;
+}
+
+
 </style>
