@@ -1,7 +1,11 @@
 <template>
-  <div class="content">
-    <div class="music-container">
-      <el-table :data="tableData" style="width: 100%;" size="small" :show-header="false">
+    <div class="music-body">
+      <el-table
+        :data="tableData"
+        style="width: 100%"
+        size="small"
+        :show-header="false"
+      >
         <el-table-column width="40px">
           <template #default="{ $index }">
             {{ $index + 1 }}
@@ -22,8 +26,16 @@
         </el-table-column>
       </el-table>
     </div>
-    <div class="music-toolbar">
-      <!-- 上一首歌按钮 -->
+    <div class="music-footer">
+      <!-- <el-slider
+      size='mini'
+      v-model="currentProgress"
+      :min="0"
+      :max="100"
+      :show-input="false"
+      @change="changeProgress"
+    ></el-slider> -->
+      <!-- previous audio -->
       <el-button link type="primary" class="no-shadow" @click="prevSong"
         ><el-icon><ArrowLeftBold /></el-icon
       ></el-button>
@@ -37,20 +49,11 @@
         ><el-icon size="35px"><CaretRight /></el-icon
       ></el-button>
       <el-button v-else @click="pause"></el-button>
-      <!-- 下一首歌按钮 -->
+      <!-- next audio -->
       <el-button link type="primary" class="no-shadow" @click="nextSong"
         ><el-icon><ArrowRightBold /></el-icon
       ></el-button>
-      <!-- 歌曲进度条 -->
-      <!-- <el-slider
-      v-model="currentProgress"
-      :min="0"
-      :max="100"
-      :show-input="false"
-      @change="changeProgress"
-    ></el-slider> -->
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -124,44 +127,33 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.container {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  width: 100%;
+.music-body {
+  flex: 1; /* 设置 body 填充剩余空间 */
+  overflow-y: auto; /* 当内容溢出时，显示滚动条 */
 }
 
-.music-container {
-  margin-bottom: 70px; /* 为底部固定的 div 留出空间 */
-  background-color: #ccc; /* 假设第二个 div 的背景颜色为灰色 */
-}
-
-.music-toolbar {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  width: 100%; /* 让 div 充满整个页面宽度 */
-  background-color: white; /* 设置背景颜色，可根据需要修改 */
-  height: 70px;
-  padding: 18px; /* 设置内边距，可根据需要修改 */
-  box-sizing: border-box; /* 确保 padding 不会影响到 div 的宽度 */
+.music-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background-color: white;
 }
 
 .no-shadow {
   box-shadow: none !important;
 }
 
-
 ::v-deep .el-table--border th.el-table__cell,
 ::v-deep .el-table td.el-table__cell {
   border-bottom: none !important;
 }
- 
 ::v-deep .el-table--border .el-table__cell {
-  border-right:none !important;
+  border-right: none !important;
 }
- 
-::v-deep .el-table--group, .el-table--border{
+::v-deep .el-table--group,
+.el-table--border {
   border: none !important;
 }
-
-
 </style>
