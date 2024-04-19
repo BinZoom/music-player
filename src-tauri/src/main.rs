@@ -103,23 +103,27 @@ fn handle_custom_event(state: tauri::State<Arc<Mutex<Sender<AudioEvent>>>>, even
     let event: serde_json::Value = serde_json::from_str(&event).unwrap();
     let state_clone = Arc::clone(&state);
 
-    let a = event["payload"]["action"].as_str();
-    // if let Some(action) = event["payload"]["action"].as_str() {
-    //     // 多线程生命周期问题
-    //     tokio::spawn(async move {
-    //         let sender = state_clone.lock().unwrap();
-    //         match action {
-    //             "play" => {
-    //                 let file_path = event["payload"]["file_path"].as_str().unwrap();
-    //                 sender.send(AudioEvent::Play(file_path.to_owned())).unwrap();
-    //             }
-    //             "pause" => {
-    //                 sender.send(AudioEvent::Pause).unwrap();
-    //             }
-    //             _ => {}
-    //         }
-    //     });
-    // }
+    tokio::spawn(async move {
+        let sender = state_clone.lock().unwrap();
+        if let Some(action) = event["payload"]["action"].as_str() {
+            match action {
+                "play" => {
+                    if let Some(file_path) = event["payload"]["file_path"].as_str() {
+                        sender.send(AudioEvent::Play(file_path.to_owned())).unwrap();
+                    }
+                    // 可能还需要处理文件路径为空的情况
+                }
+                "pause" => {
+                    sender.send(AudioEvent::Pause).unwrap();
+                }
+                _ => {
+                    // 处理其他动作的情况
+                }
+            }
+        } else {
+            // 处理空动作的情况
+        }
+    });
 }
 
 fn main() {
