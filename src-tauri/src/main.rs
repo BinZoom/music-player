@@ -3,9 +3,7 @@
 
 use audio_service::AudioService;
 use serde::Serialize;
-
 use audio_service::AudioEvent;
-use std::sync::{Arc, Mutex};
 use tokio::sync::broadcast::Sender;
 
 mod audio_service {
@@ -72,12 +70,13 @@ mod audio_service {
 
 
 #[tauri::command]
-fn handle_custom_event(sender: tauri::State<Sender<AudioEvent>>, event: String) {
+fn handle_event(sender: tauri::State<Sender<AudioEvent>>, event: String) {
+    println!("Received event: {}", event);
     let event: serde_json::Value = serde_json::from_str(&event).unwrap();
-    if let Some(action) = event["payload"]["action"].as_str() {
+    if let Some(action) = event["action"].as_str() {
         match action {
             "play" => {
-                if let Some(file_path) = event["payload"]["file_path"].as_str() {
+                if let Some(file_path) = event["file_path"].as_str() {
                     sender.send(AudioEvent::Play(file_path.to_owned())).unwrap();
                 }
                 // 可能还需要处理文件路径为空的情况
@@ -126,7 +125,7 @@ async fn main() {
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            handle_custom_event,
+            handle_event,
             scan_files_in_directory
         ])
         .manage(audio_service.event_sender)

@@ -7,8 +7,8 @@
     </el-table-column>
     <el-table-column prop="file_name" label="歌曲名" width="500" />
     <el-table-column label="操作" width="100">
-      <template #default="{ scope }">
-        <el-button @click="play(scope.row)">播放</el-button>
+      <template #default="{ row }">
+        <el-button @click="playAudio(row.file_name)">播放</el-button>
       </template>
     </el-table-column>
   </el-table>
@@ -57,23 +57,23 @@ const nextSong = () => {
   // 下一首歌逻辑
 };
 
-async function playAudio(row: any) {
+async function playAudio(file_name: String) {
   isPlaying.value = true;
-  currentMusic.value = row.file_name;
-  const file_path = musicHubPath.value + row.file_name;
+  // currentMusic.value = file_name;
+  const file_path = musicHubPath.value + file_name;
   const event: CustomEventPayload = { action: "play", file_path };
   try {
-    await invoke("tauri://custom-event", { event });
+    await invoke("handle_event", {event: JSON.stringify(event)});
   } catch (error) {
     console.error(error);
   }
 }
 
-async function pause() {
+async function pauseAudio() {
   isPlaying.value = false;
   const event: CustomEventPayload = { action: "pause" };
   try {
-    await invoke("tauri://custom-event", { event });
+    await invoke("handle_event", {event: JSON.stringify(event)});
   } catch (error) {
     console.error(error);
   }
