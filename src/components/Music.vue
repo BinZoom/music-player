@@ -1,11 +1,16 @@
 <template>
   <el-table :data="tableData" style="width: 100%">
     <el-table-column label="序号" width="100">
-      <template #default="{ row, $index }">
+      <template #default="{ $index }">
         {{ $index + 1 }}
       </template>
     </el-table-column>
     <el-table-column prop="file_name" label="歌曲名" width="500" />
+    <el-table-column label="操作" width="100">
+      <template #default="{ scope }">
+        <el-button @click="play(scope.row)">播放</el-button>
+      </template>
+    </el-table-column>
   </el-table>
 
   <div class="music-toolbar">
@@ -36,25 +41,43 @@ const isPlaying = ref(false); // 是否正在播放
 const currentProgress = ref(0); // 当前歌曲进度
 const tableData = ref([]);
 
+const musicHubPath = ref("E://music/"); // 音乐存放目录
+const currentMusic = ref("");
+
+interface CustomEventPayload {
+  action: "play" | "pause";
+  file_path?: string;
+}
+
 const prevSong = () => {
   // 上一首歌逻辑
-  getFileList();
 };
 
 const nextSong = () => {
   // 下一首歌逻辑
 };
 
-const play = () => {
+async function playAudio(row: any) {
   isPlaying.value = true;
-  invoke("play");
-  // 播放/暂停逻辑
-};
+  currentMusic.value = row.file_name;
+  const file_path = musicHubPath.value + row.file_name;
+  const event: CustomEventPayload = { action: "play", file_path };
+  try {
+    await invoke("tauri://custom-event", { event });
+  } catch (error) {
+    console.error(error);
+  }
+}
 
-const pause = () => {
+async function pause() {
   isPlaying.value = false;
-  // 播放/暂停逻辑
-};
+  const event: CustomEventPayload = { action: "pause" };
+  try {
+    await invoke("tauri://custom-event", { event });
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 const changeProgress = (value: number) => {
   // 改变歌曲进度逻辑
@@ -63,7 +86,7 @@ const changeProgress = (value: number) => {
 
 const getFileList = () => {
   invoke("scan_files_in_directory", {
-    path: "E://music/",
+    path: musicHubPath.value,
   }).then((res: any) => {
     console.log(res);
     tableData.value = res;
