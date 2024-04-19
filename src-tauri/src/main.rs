@@ -2,13 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use audio_service::AudioService;
-use rodio::{Decoder, OutputStream, Sink};
 use serde::Serialize;
 
 use audio_service::AudioEvent;
 use std::sync::{Arc, Mutex};
-use tauri::Manager;
-use tokio::sync::broadcast;
 use tokio::sync::broadcast::Sender;
 
 mod audio_service {
@@ -31,21 +28,25 @@ mod audio_service {
     }
 
     impl AudioService {
-        pub fn new(sink: Arc<Mutex<Sink>>) -> Self {
+        pub fn new() -> Self {
+            // Create a tokio broadcast channel to transmit events.
             let (event_sender, mut event_receiver) = broadcast::channel(100);
-            // 因为 sink 在后续还要用到，在开线程时使用了 move 转移所有权，如果转移了 sink，那么后续就不能再使用 sink 了。所有这里使用了 clone
+
+            let (_stream, handle) = OutputStream::try_default().unwrap();
+            // Create a Rodio sink and use Arc and Mutex to share data. If not. The ownership of the sink will be Moved and the sink will not be able to be used in the future.
+            let sink = Arc::new(Mutex::new(Sink::try_new(&handle).unwrap()));
             let sink_clone = Arc::clone(&sink);
-            
-            // 创建一个异步任务，用于接收消息
+
+            // Spawn a task to receive and process events
             tokio::spawn(async move {
-                let sink = sink_clone; // 使用克隆的 Arc
                 while let Ok(event) = event_receiver.recv().await {
                     match event {
                         AudioEvent::Play(file_path) => {
-                            Self::play_audio(&file_path, &sink).await;
+                            //
+                            Self::play_audio(&file_path, &sink_clone).await;
                         }
                         AudioEvent::Pause => {
-                            Self::pause_audio(&sink).await;
+                            Self::pause_audio(&sink_clone).await;
                         }
                     }
                 }
@@ -55,16 +56,38 @@ mod audio_service {
         }
 
         async fn play_audio(file_path: &str, sink: &Arc<Mutex<Sink>>) {
+            let sink = sink.lock().unwrap();
+            // TODO: exception handling
             let file = BufReader::new(File::open(file_path).unwrap());
             let source = Decoder::new(file).unwrap();
-            // 获取锁，获取不到则处于阻塞状态
-            let mut sink = sink.lock().unwrap();
             sink.append(source);
         }
 
         async fn pause_audio(sink: &Arc<Mutex<Sink>>) {
-            let mut sink = sink.lock().unwrap();
+            let sink = sink.lock().unwrap();
             sink.pause();
+        }
+    }
+}
+
+
+#[tauri::command]
+fn handle_custom_event(sender: tauri::State<Sender<AudioEvent>>, event: String) {
+    let event: serde_json::Value = serde_json::from_str(&event).unwrap();
+    if let Some(action) = event["payload"]["action"].as_str() {
+        match action {
+            "play" => {
+                if let Some(file_path) = event["payload"]["file_path"].as_str() {
+                    sender.send(AudioEvent::Play(file_path.to_owned())).unwrap();
+                }
+                // 可能还需要处理文件路径为空的情况
+            }
+            "pause" => {
+                sender.send(AudioEvent::Pause).unwrap();
+            }
+            _ => {
+                // 处理其他动作的情况
+            }
         }
     }
 }
@@ -97,49 +120,16 @@ fn scan_files_in_directory(path: &str) -> Vec<MusicFile> {
         }
     }
 }
-
-#[tauri::command]
-fn handle_custom_event(state: tauri::State<Arc<Mutex<Sender<AudioEvent>>>>, event: String) {
-    let event: serde_json::Value = serde_json::from_str(&event).unwrap();
-    let state_clone = Arc::clone(&state);
-
-    tokio::spawn(async move {
-        let sender = state_clone.lock().unwrap();
-        if let Some(action) = event["payload"]["action"].as_str() {
-            match action {
-                "play" => {
-                    if let Some(file_path) = event["payload"]["file_path"].as_str() {
-                        sender.send(AudioEvent::Play(file_path.to_owned())).unwrap();
-                    }
-                    // 可能还需要处理文件路径为空的情况
-                }
-                "pause" => {
-                    sender.send(AudioEvent::Pause).unwrap();
-                }
-                _ => {
-                    // 处理其他动作的情况
-                }
-            }
-        } else {
-            // 处理空动作的情况
-        }
-    });
-}
-
-fn main() {
-    let (_stream, handle) = OutputStream::try_default().unwrap();
-    // Arc + Mutex 结合的目的是在多线程环境下共享数据，Arc 允许多个所有者共享数据，而 Mutex 确保在任何时候只有一个线程可以访问数据
-    let sink = Arc::new(Mutex::new(Sink::try_new(&handle).unwrap()));
-
-    let audio_service = AudioService::new(sink);
-    let event_subscriber = audio_service.event_sender;
+#[tokio::main]
+async fn main() {
+    let audio_service = AudioService::new();
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             handle_custom_event,
             scan_files_in_directory
         ])
-        .manage(event_subscriber)
+        .manage(audio_service.event_sender)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
