@@ -10,9 +10,11 @@ mod audio_service {
     use rodio::{Decoder, OutputStream, Sink};
     use std::fs::File;
     use std::io::BufReader;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
     use tokio::sync::broadcast;
+    use tokio::sync::broadcast::Receiver;
     use tokio::sync::broadcast::Sender;
+    use tokio::sync::Mutex;
 
     #[derive(Debug, Clone)]
     pub enum AudioEvent {
@@ -21,51 +23,48 @@ mod audio_service {
     }
 
     pub struct AudioService {
-        sink: Arc<Mutex<Sink>>,
         pub event_sender: Sender<AudioEvent>,
+        _stream: OutputStream, // sink need the stream, ensuring that their lifecycles are the same
+        sink: Arc<Mutex<Sink>>,
     }
 
     impl AudioService {
         pub fn new() -> Self {
             // Create a tokio broadcast channel to transmit events.
             let (event_sender, mut event_receiver) = broadcast::channel(100);
-
-            let (_stream, handle) = OutputStream::try_default().unwrap();
             // Create a Rodio sink and use Arc and Mutex to share data. If not. The ownership of the sink will be Moved and the sink will not be able to be used in the future.
+            let (_stream, handle) = OutputStream::try_default().unwrap();
             let sink = Arc::new(Mutex::new(Sink::try_new(&handle).unwrap()));
             let sink_clone = Arc::clone(&sink);
 
-            // Spawn a task to receive and process events
             tokio::spawn(async move {
                 while let Ok(event) = event_receiver.recv().await {
-                    println!("tokio Received event");
+                    println!("Received event");
                     match event {
                         AudioEvent::Play(file_path) => {
-                            Self::play_audio(&file_path, &sink_clone).await;
+                            println!("start play {}", file_path);
+                            let sink = sink_clone.lock().await;
+                            // let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+                            // let sink = Sink::try_new(&stream_handle).unwrap();
+                            let file = BufReader::new(File::open(file_path).unwrap());
+                            let source = Decoder::new(file).unwrap();
+                            sink.append(source);
+                            // sink.sleep_until_end();
+                            println!("end play");
                         }
                         AudioEvent::Pause => {
-                            Self::pause_audio(&sink_clone).await;
+                            let sink = sink_clone.lock().await;
+                            sink.pause();
                         }
                     }
                 }
             });
 
-            Self { sink, event_sender }
-        }
-
-        async fn play_audio(file_path: &str, sink: &Arc<Mutex<Sink>>) {
-            println!("start play {}",file_path);
-            let sink = sink.lock().unwrap();
-            let file = BufReader::new(File::open(file_path).unwrap());
-            let source = Decoder::new(file).unwrap();
-            sink.append(source);
-            sink.sleep_until_end();
-            println!("end play");
-        }
-
-        async fn pause_audio(sink: &Arc<Mutex<Sink>>) {
-            let sink = sink.lock().unwrap();
-            sink.pause();
+            Self {
+                event_sender,
+                _stream,
+                sink,
+            }
         }
     }
 }

@@ -1,33 +1,33 @@
 <template>
-    <div class="music-body">
-      <el-table
-        :data="tableData"
-        style="width: 100%"
-        size="small"
-        :show-header="false"
-      >
-        <el-table-column width="40px">
-          <template #default="{ $index }">
-            {{ $index + 1 }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="file_name" />
-        <el-table-column width="100">
-          <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              class="no-shadow"
-              @click="playAudio(row.file_name)"
-            >
-              <el-icon size="20px"><CaretRight /></el-icon>
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
-    <div class="music-footer">
-      <!-- <el-slider
+  <div class="music-body">
+    <el-table
+      :data="tableData"
+      style="width: 100%"
+      size="small"
+      :show-header="false"
+    >
+      <el-table-column width="40px">
+        <template #default="{ $index }">
+          {{ $index + 1 }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="file_name" />
+      <el-table-column width="100">
+        <template #default="{ row }">
+          <el-button
+            link
+            type="primary"
+            class="no-shadow"
+            @click="playAudio(row.file_name)"
+          >
+            <el-icon size="20px"><CaretRight /></el-icon>
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
+  <div class="music-footer">
+    <!-- <el-slider
       size='mini'
       v-model="currentProgress"
       :min="0"
@@ -35,25 +35,25 @@
       :show-input="false"
       @change="changeProgress"
     ></el-slider> -->
-      <!-- previous audio -->
-      <el-button link type="primary" class="no-shadow" @click="prevSong"
-        ><el-icon><ArrowLeftBold /></el-icon
-      ></el-button>
-      <!-- 播放/暂停按钮 -->
-      <el-button
-        link
-        type="primary"
-        class="no-shadow"
-        v-if="!isPlaying"
-        @click="play"
-        ><el-icon size="35px"><CaretRight /></el-icon
-      ></el-button>
-      <el-button v-else @click="pause"></el-button>
-      <!-- next audio -->
-      <el-button link type="primary" class="no-shadow" @click="nextSong"
-        ><el-icon><ArrowRightBold /></el-icon
-      ></el-button>
-    </div>
+    <!-- previous audio -->
+    <el-button link type="primary" class="no-shadow" @click="prevSong"
+      ><el-icon><ArrowLeftBold /></el-icon
+    ></el-button>
+    <!-- 播放/暂停按钮 -->
+    <el-button
+      link
+      type="primary"
+      class="no-shadow"
+      v-if="!isPlaying"
+      @click="play"
+      ><el-icon size="35px"><CaretRight /></el-icon
+    ></el-button>
+    <el-button v-else @click="pause"></el-button>
+    <!-- next audio -->
+    <el-button link type="primary" class="no-shadow" @click="nextSong"
+      ><el-icon><ArrowRightBold /></el-icon
+    ></el-button>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -133,12 +133,12 @@ onMounted(() => {
 }
 
 .music-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 50px;
-    background-color: white;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50px;
+  background-color: white;
 }
 
 .no-shadow {
@@ -150,10 +150,9 @@ onMounted(() => {
   border-bottom: none !important;
 }
 ::v-deep .el-table--border .el-table__cell {
-  border-right: none !important;
+  border-right:none !important;
 }
-::v-deep .el-table--group,
-.el-table--border {
+::v-deep .el-table--group, .el-table--border{
   border: none !important;
 }
 </style>
