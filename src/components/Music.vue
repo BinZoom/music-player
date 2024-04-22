@@ -1,5 +1,6 @@
 <template>
   <div class="music-body">
+    Current Music: {{ currentMusic }}
     <el-table
       :data="tableData"
       style="width: 100%"
@@ -45,10 +46,17 @@
       type="primary"
       class="no-shadow"
       v-if="!isPlaying"
-      @click="play"
+      @click="recoveryAudio()"
       ><el-icon size="35px"><CaretRight /></el-icon
     ></el-button>
-    <el-button v-else @click="pause"></el-button>
+    <el-button
+      v-else
+      link
+      type="primary"
+      class="no-shadow"
+      @click="pauseAudio()"
+      ><el-icon size="35px"><VideoPause /></el-icon>
+    </el-button>
     <!-- next audio -->
     <el-button link type="primary" class="no-shadow" @click="nextSong"
       ><el-icon><ArrowRightBold /></el-icon
@@ -59,10 +67,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
+import { ElMessage } from "element-plus";
 import {
   CaretRight,
   ArrowLeftBold,
   ArrowRightBold,
+  VideoPause
 } from "@element-plus/icons-vue";
 
 const isPlaying = ref(false); // 是否正在播放
@@ -73,7 +83,7 @@ const musicHubPath = ref("E://music/"); // 音乐存放目录
 const currentMusic = ref("");
 
 interface CustomEventPayload {
-  action: "play" | "pause";
+  action: "play" | "pause" | "recovery";
   file_path?: string;
 }
 
@@ -87,7 +97,7 @@ const nextSong = () => {
 
 async function playAudio(file_name: String) {
   isPlaying.value = true;
-  // currentMusic.value = file_name;
+  currentMusic.value = file_name;
   const file_path = musicHubPath.value + file_name;
   const event: CustomEventPayload = { action: "play", file_path };
   try {
@@ -100,6 +110,19 @@ async function playAudio(file_name: String) {
 async function pauseAudio() {
   isPlaying.value = false;
   const event: CustomEventPayload = { action: "pause" };
+  try {
+    await invoke("handle_event", { event: JSON.stringify(event) });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function recoveryAudio() {
+  if (currentMusic.value === "") {
+    return;
+  }
+  isPlaying.value = true;
+  const event: CustomEventPayload = { action: "recovery" };
   try {
     await invoke("handle_event", { event: JSON.stringify(event) });
   } catch (error) {
@@ -150,9 +173,10 @@ onMounted(() => {
   border-bottom: none !important;
 }
 ::v-deep .el-table--border .el-table__cell {
-  border-right:none !important;
+  border-right: none !important;
 }
-::v-deep .el-table--group, .el-table--border{
+::v-deep .el-table--group,
+.el-table--border {
   border: none !important;
 }
 </style>

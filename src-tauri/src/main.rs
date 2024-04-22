@@ -11,14 +11,13 @@ mod audio_service {
     use std::fs::File;
     use std::io::BufReader;
     use std::sync::Arc;
-    use tokio::sync::broadcast;
-    use tokio::sync::broadcast::Receiver;
+    use tokio::sync::{broadcast, Mutex};
     use tokio::sync::broadcast::Sender;
-    use tokio::sync::Mutex;
 
     #[derive(Debug, Clone)]
     pub enum AudioEvent {
         Play(String),
+        Recovery,
         Pause,
     }
 
@@ -42,17 +41,20 @@ mod audio_service {
                     println!("Received event");
                     match event {
                         AudioEvent::Play(file_path) => {
-                            println!("start play {}", file_path);
+                            println!("Play {}", file_path);
                             let sink = sink_clone.lock().await;
-                            // let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-                            // let sink = Sink::try_new(&stream_handle).unwrap();
                             let file = BufReader::new(File::open(file_path).unwrap());
                             let source = Decoder::new(file).unwrap();
                             sink.append(source);
                             // sink.sleep_until_end();
-                            println!("end play");
+                        }
+                        AudioEvent::Recovery => {
+                            println!("Recovery");
+                            let sink = sink_clone.lock().await;
+                            sink.play();
                         }
                         AudioEvent::Pause => {
+                            println!("Pause");
                             let sink = sink_clone.lock().await;
                             sink.pause();
                         }
@@ -79,13 +81,15 @@ fn handle_event(sender: tauri::State<Sender<AudioEvent>>, event: String) {
                     sender.send(AudioEvent::Play(file_path.to_owned())).unwrap();
                     println!("send event: {}", file_path);
                 }
-                // 可能还需要处理文件路径为空的情况
             }
             "pause" => {
                 sender.send(AudioEvent::Pause).unwrap();
             }
+            "recovery" => {
+                sender.send(AudioEvent::Recovery).unwrap();
+            }
             _ => {
-                // 处理其他动作的情况
+                // other actions
             }
         }
     }
