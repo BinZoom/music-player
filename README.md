@@ -9,3 +9,4 @@ A desktop music player application written in Rust. The front end is based on [T
 ### Functions to be implemented:
 - Audio queue display and control.
 - The audio directory can be configured through the interface.
+- Add Tauri GitHub Action.
