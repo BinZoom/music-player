@@ -31,7 +31,6 @@
     <el-button link type="primary" class="no-shadow" @click="prevSong"
       ><el-icon><ArrowLeftBold /></el-icon
     ></el-button>
-    <!-- 播放/暂停按钮 -->
     <el-button
       link
       type="primary"
@@ -66,35 +65,15 @@ import {
   VideoPause,
 } from "@element-plus/icons-vue";
 
-const isPlaying = ref(false); // 是否正在播放
+const musicHubPath = ref("E://music/"); // Storage directory
+const isPlaying = ref(false);
 const tableData = ref([]);
-
-const musicHubPath = ref("E://music/"); // 音乐存放目录
 const currentMusic = ref("");
-const currentIndex = ref(null);
 
 interface CustomEventPayload {
   action: "play" | "pause" | "recovery";
   file_path?: string;
 }
-
-const prevSong = () => {
-  // 上一首歌逻辑
-};
-
-const nextSong = () => {
-  // 下一首歌逻辑
-};
-
-const handleMouseEnter = (index: number) => {
-  // 鼠标移入事件
-  currentIndex.value = index;
-  console.log(index);
-};
-
-const handleMouseLeave = () => {
-  currentIndex.value = null;
-};
 
 async function playAudio(file_name: String) {
   isPlaying.value = true;
@@ -139,6 +118,14 @@ const getFileList = () => {
   });
 };
 
+const prevSong = () => {
+  //TODO
+};
+
+const nextSong = () => {
+  //TODO
+};
+
 onMounted(() => {
   getFileList();
 });
@@ -146,8 +133,8 @@ onMounted(() => {
 
 <style scoped>
 .music-body {
-  flex: 1; /* 设置 body 填充剩余空间 */
-  overflow-y: auto; /* 当内容溢出时，显示滚动条 */
+  flex: 1; /*  fill remaining space */
+  overflow-y: auto;
 }
 
 .music-footer {
@@ -163,15 +150,15 @@ onMounted(() => {
   box-shadow: none !important;
 }
 
+/* list button dynamic display */
 .el-table tr:hover .hover-visible-button {
-  display: inline-block; /* 或者其他您希望的显示样式，如 'block' */
+  display: inline-block;
 }
-
-/* 默认状态下，隐藏按钮 */
 .hover-visible-button {
   display: none;
 }
 
+/* Hide table borders */
 ::v-deep .el-table--border th.el-table__cell,
 ::v-deep .el-table td.el-table__cell {
   border-bottom: none !important;

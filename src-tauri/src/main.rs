@@ -46,7 +46,6 @@ mod audio_service {
                             let file = BufReader::new(File::open(file_path).unwrap());
                             let source = Decoder::new(file).unwrap();
                             sink.append(source);
-                            // sink.sleep_until_end();
                         }
                         AudioEvent::Recovery => {
                             println!("Recovery");
@@ -100,7 +99,6 @@ pub struct MusicFile {
     pub file_name: String,
 }
 
-// 读取指定目录下的所有文件
 #[tauri::command]
 fn scan_files_in_directory(path: &str) -> Vec<MusicFile> {
     use std::fs;
