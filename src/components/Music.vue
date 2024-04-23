@@ -97,12 +97,12 @@ const volume = ref(50); // Initial volume value
 let originalVolume: number | null = null; // Store the original volume in a non silent state for use during recovery
 
 interface CustomEventPayload {
-  action: "play" | "pause" | "recovery" | "volume";
+  action: "play" | "pause" | "recovery" | "volume" | "next";
   file_path?: string;
   volume?: number;
 }
 
-async function playAudio(file_name: String) {
+const playAudio = async (file_name: String) => {
   isPlaying.value = true;
   currentMusic.value = file_name;
   const file_path = musicHubPath.value + file_name;
@@ -114,7 +114,7 @@ async function playAudio(file_name: String) {
   }
 }
 
-async function pauseAudio() {
+const pauseAudio = async () => {
   isPlaying.value = false;
   const event: CustomEventPayload = { action: "pause" };
   try {
@@ -124,7 +124,7 @@ async function pauseAudio() {
   }
 }
 
-async function recoveryAudio() {
+const recoveryAudio = async () => {
   if (currentMusic.value === "") {
     return;
   }
@@ -170,8 +170,13 @@ const prevSong = () => {
   //TODO
 };
 
-const nextSong = () => {
-  //TODO
+const nextSong = async () => {
+  const event: CustomEventPayload = { action: "next" };
+  try {
+    await invoke("handle_event", { event: JSON.stringify(event) });
+  } catch (error) {
+    ElMessage.error(error);
+  }
 };
 
 onMounted(() => {

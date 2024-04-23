@@ -20,6 +20,7 @@ mod audio_service {
         Recovery,
         Pause,
         Volume(f32),
+        Next,
     }
 
     pub struct AudioService {
@@ -62,6 +63,11 @@ mod audio_service {
                             let sink = sink_clone.lock().await;
                             sink.set_volume(volume / 50.0);
                         }
+                        AudioEvent::Next => {
+                            println!("Next Event");
+                            let sink = sink_clone.lock().await;
+                            sink.skip_one();
+                        }
                     }
                 }
             });
@@ -80,27 +86,13 @@ fn handle_event(sender: tauri::State<Sender<AudioEvent>>, event: String) {
     let event: serde_json::Value = serde_json::from_str(&event).unwrap();
     if let Some(action) = event["action"].as_str() {
         match action {
-            "play" => {
-                if let Some(file_path) = event["file_path"].as_str() {
-                    sender.send(AudioEvent::Play(file_path.to_owned())).unwrap();
-                }
-            }
-            "pause" => {
-                sender.send(AudioEvent::Pause).unwrap();
-            }
-            "recovery" => {
-                sender.send(AudioEvent::Recovery).unwrap();
-            }
-            "volume" => {
-                if let Some(volume) = event["volume"].as_f64() {
-                    let volume_f32: f32 = volume as f32;
-                    sender.send(AudioEvent::Volume(volume_f32)).unwrap();
-                }
-            }
-            _ => {
-                // other actions
-            }
-        }
+            "play" => event["file_path"].as_str().map(|file_path| sender.send(AudioEvent::Play(file_path.to_owned()))),
+            "pause" => Some(sender.send(AudioEvent::Pause)),
+            "recovery" => Some(sender.send(AudioEvent::Recovery)),
+            "volume" => event["volume"].as_f64().map(|volume| sender.send(AudioEvent::Volume(volume as f32))),
+            "next" => Some(sender.send(AudioEvent::Next)),
+            _ => None, // other actions
+        };
     }
 }
 
