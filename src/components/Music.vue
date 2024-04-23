@@ -37,7 +37,7 @@
       class="no-shadow"
       v-if="!isPlaying"
       @click="recoveryAudio()"
-      ><el-icon size="35px"><CaretRight /></el-icon
+      ><el-icon size="35px"><VideoPlay /></el-icon
     ></el-button>
     <el-button
       v-else
@@ -51,6 +51,26 @@
     <el-button link type="primary" class="no-shadow" @click="nextSong"
       ><el-icon><ArrowRightBold /></el-icon
     ></el-button>
+    <el-popover placement="top" trigger="hover">
+      <template #reference>
+        <el-button link type="primary" class="no-shadow" @click="toggleMute"
+          ><el-icon v-if="!isMuted"><Bell /></el-icon>
+          <el-icon v-else><MuteNotification /></el-icon>
+        </el-button>
+      </template>
+      <div class="slider-block">
+        <el-slider
+          v-model="volume"
+          :min="0"
+          :max="100"
+          :step="2"
+          size="small"
+          height="140px"
+          @mouseup="changeVolume"
+          @touchend="changeVolume"
+        />
+      </div>
+    </el-popover>
   </div>
 </template>
 
@@ -63,23 +83,30 @@ import {
   ArrowLeftBold,
   ArrowRightBold,
   VideoPause,
+  VideoPlay,
+  Bell,
+  MuteNotification,
 } from "@element-plus/icons-vue";
 
 const musicHubPath = ref("E://music/"); // Storage directory
 const isPlaying = ref(false);
 const tableData = ref([]);
 const currentMusic = ref("");
+const isMuted = ref(false);
+const volume = ref(50); // Initial volume value
+let originalVolume: number | null = null; // Store the original volume in a non silent state for use during recovery
 
 interface CustomEventPayload {
-  action: "play" | "pause" | "recovery";
+  action: "play" | "pause" | "recovery" | "volume";
   file_path?: string;
+  volume?: number;
 }
 
 async function playAudio(file_name: String) {
   isPlaying.value = true;
   currentMusic.value = file_name;
   const file_path = musicHubPath.value + file_name;
-  const event: CustomEventPayload = { action: "play", file_path };
+  const event: CustomEventPayload = { action: "play", file_path: file_path };
   try {
     await invoke("handle_event", { event: JSON.stringify(event) });
   } catch (error) {
@@ -106,9 +133,30 @@ async function recoveryAudio() {
   try {
     await invoke("handle_event", { event: JSON.stringify(event) });
   } catch (error) {
-    console.error(error);
+    ElMessage.error(error);
   }
 }
+
+const toggleMute = () => {
+  if (!isMuted.value) {
+    // Save volume values before muting
+    originalVolume = volume.value;
+  }
+  isMuted.value = !isMuted.value;
+  // Update volume
+  volume.value = isMuted.value ? 0 : originalVolume ?? volume.value;
+  // 调用后台接口
+  changeVolume();
+};
+
+const changeVolume = async () => {
+  const event: CustomEventPayload = { action: "volume", volume: volume.value };
+  try {
+    await invoke("handle_event", { event: JSON.stringify(event) });
+  } catch (error) {
+    ElMessage.error(error);
+  }
+};
 
 const getFileList = () => {
   invoke("scan_files_in_directory", {
@@ -156,6 +204,15 @@ onMounted(() => {
 }
 .hover-visible-button {
   display: none;
+}
+
+.slider-block {
+  max-width: 150px;
+  display: flex;
+  align-items: center;
+}
+.slider-block .el-slider {
+  margin-top: 0;
 }
 
 /* Hide table borders */

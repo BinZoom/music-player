@@ -11,14 +11,15 @@ mod audio_service {
     use std::fs::File;
     use std::io::BufReader;
     use std::sync::Arc;
-    use tokio::sync::{broadcast, Mutex};
     use tokio::sync::broadcast::Sender;
+    use tokio::sync::{broadcast, Mutex};
 
     #[derive(Debug, Clone)]
     pub enum AudioEvent {
         Play(String),
         Recovery,
         Pause,
+        Volume(f32),
     }
 
     pub struct AudioService {
@@ -38,24 +39,28 @@ mod audio_service {
 
             tokio::spawn(async move {
                 while let Ok(event) = event_receiver.recv().await {
-                    println!("Received event");
                     match event {
                         AudioEvent::Play(file_path) => {
-                            println!("Play {}", file_path);
+                            println!("Play Event {}", file_path);
                             let sink = sink_clone.lock().await;
                             let file = BufReader::new(File::open(file_path).unwrap());
                             let source = Decoder::new(file).unwrap();
                             sink.append(source);
                         }
                         AudioEvent::Recovery => {
-                            println!("Recovery");
+                            println!("Recovery Event");
                             let sink = sink_clone.lock().await;
                             sink.play();
                         }
                         AudioEvent::Pause => {
-                            println!("Pause");
+                            println!("Pause Event");
                             let sink = sink_clone.lock().await;
                             sink.pause();
+                        }
+                        AudioEvent::Volume(volume) => {
+                            println!("Volume Event {}", volume);
+                            let sink = sink_clone.lock().await;
+                            sink.set_volume(volume * 0.1);
                         }
                     }
                 }
@@ -78,7 +83,6 @@ fn handle_event(sender: tauri::State<Sender<AudioEvent>>, event: String) {
             "play" => {
                 if let Some(file_path) = event["file_path"].as_str() {
                     sender.send(AudioEvent::Play(file_path.to_owned())).unwrap();
-                    println!("send event: {}", file_path);
                 }
             }
             "pause" => {
@@ -86,6 +90,12 @@ fn handle_event(sender: tauri::State<Sender<AudioEvent>>, event: String) {
             }
             "recovery" => {
                 sender.send(AudioEvent::Recovery).unwrap();
+            }
+            "volume" => {
+                if let Some(volume) = event["volume"].as_f64() {
+                    let volume_f32: f32 = volume as f32;
+                    sender.send(AudioEvent::Volume(volume_f32)).unwrap();
+                }
             }
             _ => {
                 // other actions
