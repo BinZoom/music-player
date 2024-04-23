@@ -18,7 +18,7 @@
           <el-button
             link
             type="primary"
-            class="no-shadow"
+            class="hover-visible-button no-shadow"
             @click="playAudio(row.file_name)"
           >
             <el-icon size="20px"><CaretRight /></el-icon>
@@ -28,15 +28,6 @@
     </el-table>
   </div>
   <div class="music-footer">
-    <!-- <el-slider
-      size='mini'
-      v-model="currentProgress"
-      :min="0"
-      :max="100"
-      :show-input="false"
-      @change="changeProgress"
-    ></el-slider> -->
-    <!-- previous audio -->
     <el-button link type="primary" class="no-shadow" @click="prevSong"
       ><el-icon><ArrowLeftBold /></el-icon
     ></el-button>
@@ -72,15 +63,15 @@ import {
   CaretRight,
   ArrowLeftBold,
   ArrowRightBold,
-  VideoPause
+  VideoPause,
 } from "@element-plus/icons-vue";
 
 const isPlaying = ref(false); // 是否正在播放
-const currentProgress = ref(0); // 当前歌曲进度
 const tableData = ref([]);
 
 const musicHubPath = ref("E://music/"); // 音乐存放目录
 const currentMusic = ref("");
+const currentIndex = ref(null);
 
 interface CustomEventPayload {
   action: "play" | "pause" | "recovery";
@@ -93,6 +84,16 @@ const prevSong = () => {
 
 const nextSong = () => {
   // 下一首歌逻辑
+};
+
+const handleMouseEnter = (index: number) => {
+  // 鼠标移入事件
+  currentIndex.value = index;
+  console.log(index);
+};
+
+const handleMouseLeave = () => {
+  currentIndex.value = null;
 };
 
 async function playAudio(file_name: String) {
@@ -130,16 +131,10 @@ async function recoveryAudio() {
   }
 }
 
-const changeProgress = (value: number) => {
-  // 改变歌曲进度逻辑
-  currentProgress.value = value;
-};
-
 const getFileList = () => {
   invoke("scan_files_in_directory", {
     path: musicHubPath.value,
   }).then((res: any) => {
-    console.log(res);
     tableData.value = res;
   });
 };
@@ -166,6 +161,15 @@ onMounted(() => {
 
 .no-shadow {
   box-shadow: none !important;
+}
+
+.el-table tr:hover .hover-visible-button {
+  display: inline-block; /* 或者其他您希望的显示样式，如 'block' */
+}
+
+/* 默认状态下，隐藏按钮 */
+.hover-visible-button {
+  display: none;
 }
 
 ::v-deep .el-table--border th.el-table__cell,
