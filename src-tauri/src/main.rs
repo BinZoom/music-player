@@ -1,86 +1,12 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use audio_service::AudioEvent;
-use audio_service::AudioService;
-use serde::Serialize;
+mod audio_service;
+
+use audio_service::{ AudioEvent,AudioService,AudioFile};
 use tokio::sync::broadcast::Sender;
 
-mod audio_service {
-    use rodio::{Decoder, OutputStream, Sink};
-    use std::fs::File;
-    use std::io::BufReader;
-    use std::sync::Arc;
-    use tokio::sync::broadcast::Sender;
-    use tokio::sync::{broadcast, Mutex};
-
-    #[derive(Debug, Clone)]
-    pub enum AudioEvent {
-        Play(String),
-        Recovery,
-        Pause,
-        Volume(f32),
-        Next,
-    }
-
-    pub struct AudioService {
-        pub event_sender: Sender<AudioEvent>,
-        _stream: OutputStream, // sink need the stream, ensuring that their lifecycles are the same
-        sink: Arc<Mutex<Sink>>,
-    }
-
-    impl AudioService {
-        pub fn new() -> Self {
-            // Create a tokio broadcast channel to transmit events.
-            let (event_sender, mut event_receiver) = broadcast::channel(100);
-            // Create a Rodio sink and use Arc and Mutex to share data. If not. The ownership of the sink will be Moved and the sink will not be able to be used in the future.
-            let (_stream, handle) = OutputStream::try_default().unwrap();
-            let sink = Arc::new(Mutex::new(Sink::try_new(&handle).unwrap()));
-            let sink_clone = Arc::clone(&sink);
-
-            tokio::spawn(async move {
-                while let Ok(event) = event_receiver.recv().await {
-                    match event {
-                        AudioEvent::Play(file_path) => {
-                            println!("Play Event {}", file_path);
-                            let sink = sink_clone.lock().await;
-                            let file = BufReader::new(File::open(file_path).unwrap());
-                            let source = Decoder::new(file).unwrap();
-                            sink.append(source);
-                        }
-                        AudioEvent::Recovery => {
-                            println!("Recovery Event");
-                            let sink = sink_clone.lock().await;
-                            sink.play();
-                        }
-                        AudioEvent::Pause => {
-                            println!("Pause Event");
-                            let sink = sink_clone.lock().await;
-                            sink.pause();
-                        }
-                        AudioEvent::Volume(volume) => {
-                            println!("Volume Event {}", volume);
-                            let sink = sink_clone.lock().await;
-                            sink.set_volume(volume / 50.0);
-                        }
-                        AudioEvent::Next => {
-                            println!("Next Event");
-                            let sink = sink_clone.lock().await;
-                            sink.skip_one();
-                        }
-                    }
-                }
-            });
-
-            Self {
-                event_sender,
-                _stream,
-                sink,
-            }
-        }
-    }
-}
-
+/// Receive events sent by the front end, encapsulate them as [`AudioEvent`] and send them to the channel.
 #[tauri::command]
 fn handle_event(sender: tauri::State<Sender<AudioEvent>>, event: String) {
     let event: serde_json::Value = serde_json::from_str(&event).unwrap();
@@ -96,13 +22,9 @@ fn handle_event(sender: tauri::State<Sender<AudioEvent>>, event: String) {
     }
 }
 
-#[derive(Serialize, Debug)]
-pub struct MusicFile {
-    pub file_name: String,
-}
-
+/// Get audio file information in the target directory.
 #[tauri::command]
-fn scan_files_in_directory(path: &str) -> Vec<MusicFile> {
+fn scan_files_in_directory(path: &str) -> Vec<AudioFile> {
     use std::fs;
 
     match fs::read_dir(path) {
@@ -113,7 +35,7 @@ fn scan_files_in_directory(path: &str) -> Vec<MusicFile> {
                         .file_name()
                         .into_string()
                         .ok()
-                        .map(|file_name| MusicFile { file_name })
+                        .map(|file_name| AudioFile { file_name })
                 })
             })
             .collect(),
@@ -123,16 +45,17 @@ fn scan_files_in_directory(path: &str) -> Vec<MusicFile> {
         }
     }
 }
+
+/// Main method to start the service.
 #[tokio::main]
 async fn main() {
     let audio_service = AudioService::new();
-
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             handle_event,
             scan_files_in_directory
         ])
-        .manage(audio_service.event_sender)
+        .manage(audio_service.event_sender) // share
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
