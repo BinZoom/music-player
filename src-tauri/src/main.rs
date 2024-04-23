@@ -60,7 +60,7 @@ mod audio_service {
                         AudioEvent::Volume(volume) => {
                             println!("Volume Event {}", volume);
                             let sink = sink_clone.lock().await;
-                            sink.set_volume(volume * 0.1);
+                            sink.set_volume(volume / 50.0);
                         }
                     }
                 }

@@ -110,7 +110,7 @@ async function playAudio(file_name: String) {
   try {
     await invoke("handle_event", { event: JSON.stringify(event) });
   } catch (error) {
-    console.error(error);
+    ElMessage.error(error);
   }
 }
 
@@ -120,7 +120,7 @@ async function pauseAudio() {
   try {
     await invoke("handle_event", { event: JSON.stringify(event) });
   } catch (error) {
-    console.error(error);
+    ElMessage.error(error);
   }
 }
 
