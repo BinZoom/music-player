@@ -6,7 +6,7 @@ const musicHubPath = ref("E://music/"); // Storage directory
 export const isPlaying = ref(false);
 export const tableData = ref([]);
 export const currAudioName = ref("");
-const currAudioId = ref(1);
+const currAudioId = ref(0);
 export const isMuted = ref(false);
 export const volume = ref(50); // Initial volume value
 let originalVolume: number | null = null; // Store the original volume in a non silent state for use during recovery
@@ -31,21 +31,15 @@ export const playAudio = async (row: any) => {
     currAudioId.value = row.id;
     const file_path = musicHubPath.value + row.file_name;
     const event: CustomEventPayload = { action: "play", file_path: file_path };
-    try {
-        await invoke("handle_event", { event: JSON.stringify(event) });
-    } catch (error) {
-        ElMessage.error(error);
-    }
+    await invoke("handle_event", { event: JSON.stringify(event) }).catch((error) => ElMessage.error(error));
+
 };
 
 export const pauseAudio = async () => {
     isPlaying.value = false;
     const event: CustomEventPayload = { action: "pause" };
-    try {
-        await invoke("handle_event", { event: JSON.stringify(event) });
-    } catch (error) {
-        ElMessage.error(error);
-    }
+    await invoke("handle_event", { event: JSON.stringify(event) }).catch((error) => ElMessage.error(error));
+
 };
 
 export const recoveryAudio = async () => {
@@ -54,11 +48,8 @@ export const recoveryAudio = async () => {
     }
     isPlaying.value = true;
     const event: CustomEventPayload = { action: "recovery" };
-    try {
-        await invoke("handle_event", { event: JSON.stringify(event) });
-    } catch (error) {
-        ElMessage.error(error);
-    }
+    await invoke("handle_event", { event: JSON.stringify(event) }).catch((error) => ElMessage.error(error));
+
 };
 
 export const toggleMute = () => {
@@ -74,11 +65,7 @@ export const toggleMute = () => {
 
 export const changeVolume = async () => {
     const event: CustomEventPayload = { action: "volume", volume: volume.value };
-    try {
-        await invoke("handle_event", { event: JSON.stringify(event) });
-    } catch (error) {
-        ElMessage.error(error);
-    }
+    await invoke("handle_event", { event: JSON.stringify(event) }).catch((error) => ElMessage.error(error));
 };
 
 export const preAudio = () => {
@@ -94,6 +81,14 @@ export const nextAudio = async () => {
 };
 
 export const playControl = async () => {
-    console.info("控制中");
+    await invoke("is_sink_empty")
+        .then((is_empty) => {
+            if (is_empty) {
+                isPlaying.value = false
+                currAudioName.value = '';
+                currAudioId.value = 0;
+            }
+        })
+        .catch((error) => ElMessage.error(error))
 };
 

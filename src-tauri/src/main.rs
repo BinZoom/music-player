@@ -4,7 +4,10 @@
 mod audio_service;
 
 use audio_service::{AudioEvent, AudioFile, AudioService};
+use rodio::Sink;
+use std::sync::Arc;
 use tokio::sync::broadcast::Sender;
+use tokio::sync::Mutex;
 
 /// Receive events sent by the front end, encapsulate them as [`AudioEvent`] and send them to the channel.
 #[tauri::command]
@@ -59,6 +62,15 @@ fn scan_files_in_directory(path: &str) -> Vec<AudioFile> {
     }
 }
 
+/// Check if there is no source in the sink.
+#[tauri::command]
+async fn is_sink_empty(sink: tauri::State<'_, Arc<Mutex<Sink>>>) -> Result<bool, String> {
+    let sink_clone = Arc::clone(&sink);
+    let sink = sink_clone.lock().await;
+    let is_empty = sink.empty();
+    Ok(is_empty)
+}
+
 /// Main method to start the service.
 #[tokio::main]
 async fn main() {
@@ -66,9 +78,11 @@ async fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             handle_event,
-            scan_files_in_directory
+            scan_files_in_directory,
+            is_sink_empty
         ])
         .manage(audio_service.event_sender) // share
+        .manage(audio_service.sink)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -12,7 +12,7 @@ use tokio::sync::{broadcast, Mutex};
 pub struct AudioService {
     pub event_sender: Sender<AudioEvent>,
     _stream: OutputStream, // sink need the stream, ensuring that their lifecycles are the same
-    sink: Arc<Mutex<Sink>>,
+    pub sink: Arc<Mutex<Sink>>,
 }
 
 /// Audio file information.
