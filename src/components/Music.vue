@@ -30,7 +30,7 @@
     <el-row :gutter="20">
       <el-col :span="6">
         <div style="margin-top: 10px">
-          <el-text size="small">{{ currentMusic }}</el-text>
+          <el-text size="small"> <el-icon><Headset /></el-icon> {{ currentMusic }}</el-text>
         </div>
       </el-col>
       <el-col :span="2"></el-col>
@@ -54,7 +54,6 @@
           @click="pauseAudio()"
           ><el-icon size="35px"><VideoPause /></el-icon>
         </el-button>
-        <!-- next audio -->
         <el-button link type="primary" class="no-shadow" @click="nextSong"
           ><el-icon><ArrowRightBold /></el-icon
         ></el-button>
@@ -104,6 +103,7 @@ import {
   VideoPlay,
   Bell,
   MuteNotification,
+  Headset,
 } from "@element-plus/icons-vue";
 
 const musicHubPath = ref("E://music/"); // Storage directory

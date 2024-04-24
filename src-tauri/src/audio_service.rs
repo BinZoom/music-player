@@ -1,12 +1,12 @@
 /*! Audio service module */
 
 use rodio::{Decoder, OutputStream, Sink};
+use serde::Serialize;
 use std::fs::File;
 use std::io::BufReader;
 use std::sync::Arc;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::{broadcast, Mutex};
-use serde::Serialize;
 
 /// Audio processing services. The main job is to receive [`AudioEvent`] and process them
 pub struct AudioService {
@@ -37,7 +37,11 @@ impl AudioService {
                     AudioEvent::Play(file_path) => {
                         let file = BufReader::new(File::open(file_path).unwrap());
                         let source = Decoder::new(file).unwrap();
-                        sink.append(source);
+                        sink.clear();
+                        if sink.is_paused() {
+                            sink.append(source);
+                            sink.play();
+                        }
                     }
                     AudioEvent::Recovery => {
                         sink.play();
@@ -71,7 +75,6 @@ pub enum AudioEvent {
     Volume(f32),
     Next,
 }
-
 
 #[cfg(test)]
 mod tests {
