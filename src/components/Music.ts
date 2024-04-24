@@ -2,7 +2,8 @@ import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
 import { ElMessage } from "element-plus";
 
-const musicHubPath = ref("E://music/"); // Storage directory
+const audioHubPath = ref("E://music/"); // Storage directory
+
 export const isPlaying = ref(false);
 export const tableData = ref([]);
 export const currAudioName = ref("");
@@ -19,7 +20,7 @@ interface CustomEventPayload {
 
 export const getFileList = () => {
     invoke("scan_files_in_directory", {
-        path: musicHubPath.value,
+        path: audioHubPath.value,
     }).then((res: any) => {
         tableData.value = res;
     });
@@ -29,7 +30,7 @@ export const playAudio = async (row: any) => {
     isPlaying.value = true;
     currAudioName.value = row.file_name;
     currAudioId.value = row.id;
-    const file_path = musicHubPath.value + row.file_name;
+    const file_path = audioHubPath.value + row.file_name;
     const event: CustomEventPayload = { action: "play", file_path: file_path };
     await invoke("handle_event", { event: JSON.stringify(event) }).catch((error) => ElMessage.error(error));
 

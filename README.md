@@ -7,11 +7,13 @@ A simple desktop music player application written in Rust. The front end is base
 - Audio switching.
 
 ### How to run
-1. Preparation environment
-- Rust（ C++ Env）
+Preparation environment:
+- Rust Basic Environment
 - Node.js
-2. Modify the audio repository path and place the pre downloaded audio in it.Search 'musicHubPath' in the project for custom modifications.
-3. Start project
+
+Modify the audio repository path and place the downloaded audio in it.Search `audioHubPath` in the project for custom modifications.
+
+Finally, install the dependencies and start
 ```
 npm install
 npm run tauri dev
