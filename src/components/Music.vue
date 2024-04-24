@@ -83,6 +83,20 @@
               />
             </div>
           </el-popover>
+          <el-popover placement="top" trigger="hover">
+            <template #reference>
+              <el-button link type="primary" class="no-shadow">
+                <span v-if="radio === 'L'">L</span>
+                <span v-else>S</span>
+              </el-button>
+            </template>
+            <div>
+              <el-radio-group v-model="radio">
+                <el-radio size="small" label="List loop" value="L" />
+                <el-radio size="small" label="Single loop" value="S" />
+              </el-radio-group>
+            </div>
+          </el-popover>
         </div>
       </el-col>
     </el-row>
@@ -90,26 +104,26 @@
 </template>
 
 <script setup lang="ts">
-import * as Music from './Music';
+import * as Music from "./Music";
 import { ref, onMounted, onUnmounted } from "vue";
 
 import {
-    CaretRight,
-    ArrowLeftBold,
-    ArrowRightBold,
-    VideoPause,
-    VideoPlay,
-    Bell,
-    MuteNotification,
-    Headset,
+  CaretRight,
+  ArrowLeftBold,
+  ArrowRightBold,
+  VideoPause,
+  VideoPlay,
+  Bell,
+  MuteNotification,
+  Headset,
 } from "@element-plus/icons-vue";
-
 
 const tableData = Music.tableData;
 const isPlaying = Music.isPlaying;
 const currAudioName = Music.currAudioName;
 const isMuted = Music.isMuted;
 const volume = Music.volume;
+const radio = Music.radio;
 
 const playAudio = Music.playAudio;
 const pauseAudio = Music.pauseAudio;
@@ -120,18 +134,17 @@ const preAudio = Music.preAudio;
 const nextAudio = Music.nextAudio;
 
 onMounted(() => {
-    Music.getFileList();
+  Music.getFileList();
 
-    // 每秒调用一次 fetchData 函数
-    const intervalId = setInterval(Music.playControl, 1000);
+  const intervalId = setInterval(Music.playControl, 1000);
 
-    // 在组件销毁时清除定时器
-    onUnmounted(() => {
-        clearInterval(intervalId);
-    });
+  // clear
+  onUnmounted(() => {
+    clearInterval(intervalId);
+  });
 });
 </script>
 
 <style scoped>
-@import './Music.css';
+@import "./Music.css";
 </style>

@@ -4,12 +4,18 @@ import { ElMessage } from "element-plus";
 
 const audioHubPath = ref("E://music/"); // Storage directory
 
+enum PlayModeEnum {
+    ListLoop = "L",
+    SingleLoop = "S"
+}
+
 export const isPlaying = ref(false);
 export const tableData = ref([]);
 export const currAudioName = ref("");
 const currAudioId = ref(0);
 export const isMuted = ref(false);
 export const volume = ref(50); // Initial volume value
+export const radio = ref(PlayModeEnum.ListLoop);
 let originalVolume: number | null = null; // Store the original volume in a non silent state for use during recovery
 
 interface CustomEventPayload {
@@ -85,9 +91,23 @@ export const playControl = async () => {
     await invoke("is_sink_empty")
         .then((is_empty) => {
             if (is_empty) {
-                isPlaying.value = false
-                currAudioName.value = '';
-                currAudioId.value = 0;
+                isPlaying.value = false;
+                if (currAudioId.value === 0) {
+                    return;
+                }
+                let index = 0;
+                switch (radio.value) {
+                    case PlayModeEnum.ListLoop:
+                        index = currAudioId.value === tableData.value.length ? 0 : currAudioId.value;
+                        break;
+                    case PlayModeEnum.SingleLoop:
+                        index = currAudioId.value - 1;
+                        break;
+                    default:
+                        console.warn(`Unsupported play mode: ${radio.value}`);
+                        break;
+                }
+                playAudio(tableData.value[index])
             }
         })
         .catch((error) => ElMessage.error(error))

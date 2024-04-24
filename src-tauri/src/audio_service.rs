@@ -85,13 +85,16 @@ mod tests {
         let sink = Sink::try_new(&stream_handle).unwrap();
 
         // Add a dummy source of the sake of the example.
-        let file = BufReader::new(File::open("E://music/music1.flac").unwrap());
+        let file = BufReader::new(File::open("E://music/AI Music.mp3").unwrap());
         let source = Decoder::new(file).unwrap();
         sink.append(source);
+
+        println!("{}", sink.empty());
 
         // The sound plays in a separate thread. This call will block the current thread until the sink
         // has finished playing all its queued sounds.
         sink.sleep_until_end();
+
+        println!("{}", sink.empty());
     }
-    
 }
