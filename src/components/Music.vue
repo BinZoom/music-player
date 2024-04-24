@@ -6,11 +6,7 @@
       size="small"
       :show-header="false"
     >
-      <el-table-column width="40px">
-        <template #default="{ $index }">
-          {{ $index + 1 }}
-        </template>
-      </el-table-column>
+      <el-table-column prop="id" width="40px" />
       <el-table-column prop="file_name" />
       <el-table-column width="100">
         <template #default="{ row }">
@@ -18,7 +14,7 @@
             link
             type="primary"
             class="hover-visible-button no-shadow"
-            @click="playAudio(row.file_name)"
+            @click="playAudio(row)"
           >
             <el-icon size="20px"><CaretRight /></el-icon>
           </el-button>
@@ -30,7 +26,9 @@
     <el-row :gutter="20">
       <el-col :span="6">
         <div style="margin-top: 10px">
-          <el-text size="small"> <el-icon><Headset /></el-icon> {{ currentMusic }}</el-text>
+          <el-text size="small">
+            <el-icon><Headset /></el-icon> {{ currAudioName }}</el-text
+          >
         </div>
       </el-col>
       <el-col :span="2"></el-col>
@@ -109,21 +107,23 @@ import {
 const musicHubPath = ref("E://music/"); // Storage directory
 const isPlaying = ref(false);
 const tableData = ref([]);
-const currentMusic = ref("");
+const currAudioName = ref("");
+const currAudioId = ref(1);
 const isMuted = ref(false);
 const volume = ref(50); // Initial volume value
 let originalVolume: number | null = null; // Store the original volume in a non silent state for use during recovery
 
 interface CustomEventPayload {
-  action: "play" | "pause" | "recovery" | "volume" | "next";
+  action: "play" | "pause" | "recovery" | "volume";
   file_path?: string;
   volume?: number;
 }
 
-const playAudio = async (file_name: String) => {
+const playAudio = async (row: any) => {
   isPlaying.value = true;
-  currentMusic.value = file_name;
-  const file_path = musicHubPath.value + file_name;
+  currAudioName.value = row.file_name;
+  currAudioId.value = row.id;
+  const file_path = musicHubPath.value + row.file_name;
   const event: CustomEventPayload = { action: "play", file_path: file_path };
   try {
     await invoke("handle_event", { event: JSON.stringify(event) });
@@ -143,7 +143,7 @@ const pauseAudio = async () => {
 };
 
 const recoveryAudio = async () => {
-  if (currentMusic.value === "") {
+  if (currAudioName.value === "") {
     return;
   }
   isPlaying.value = true;
@@ -185,16 +185,15 @@ const getFileList = () => {
 };
 
 const prevSong = () => {
-  //TODO
+  if (currAudioId.value > 2) {
+    let row = tableData.value[currAudioId.value - 2];
+    playAudio(row);
+  }
 };
 
 const nextSong = async () => {
-  const event: CustomEventPayload = { action: "next" };
-  try {
-    await invoke("handle_event", { event: JSON.stringify(event) });
-  } catch (error) {
-    ElMessage.error(error);
-  }
+  let row = tableData.value[currAudioId.value];
+  playAudio(row);
 };
 
 onMounted(() => {

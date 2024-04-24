@@ -18,6 +18,7 @@ pub struct AudioService {
 /// Audio file information.
 #[derive(Serialize, Debug)]
 pub struct AudioFile {
+    pub id: i32,
     pub file_name: String,
 }
 
@@ -52,9 +53,6 @@ impl AudioService {
                     AudioEvent::Volume(volume) => {
                         sink.set_volume(volume / 50.0);
                     }
-                    AudioEvent::Next => {
-                        sink.skip_one();
-                    }
                 }
             }
         });
@@ -73,7 +71,6 @@ pub enum AudioEvent {
     Recovery,
     Pause,
     Volume(f32),
-    Next,
 }
 
 #[cfg(test)]
@@ -96,4 +93,5 @@ mod tests {
         // has finished playing all its queued sounds.
         sink.sleep_until_end();
     }
+    
 }
