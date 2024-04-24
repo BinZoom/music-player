@@ -1,6 +1,5 @@
 <template>
   <div class="music-body">
-    Current Music: {{ currentMusic }}
     <el-table
       :data="tableData"
       style="width: 100%"
@@ -28,49 +27,68 @@
     </el-table>
   </div>
   <div class="music-footer">
-    <el-button link type="primary" class="no-shadow" @click="prevSong"
-      ><el-icon><ArrowLeftBold /></el-icon
-    ></el-button>
-    <el-button
-      link
-      type="primary"
-      class="no-shadow"
-      v-if="!isPlaying"
-      @click="recoveryAudio()"
-      ><el-icon size="35px"><VideoPlay /></el-icon
-    ></el-button>
-    <el-button
-      v-else
-      link
-      type="primary"
-      class="no-shadow"
-      @click="pauseAudio()"
-      ><el-icon size="35px"><VideoPause /></el-icon>
-    </el-button>
-    <!-- next audio -->
-    <el-button link type="primary" class="no-shadow" @click="nextSong"
-      ><el-icon><ArrowRightBold /></el-icon
-    ></el-button>
-    <el-popover placement="top" trigger="hover">
-      <template #reference>
-        <el-button link type="primary" class="no-shadow" @click="toggleMute"
-          ><el-icon v-if="!isMuted"><Bell /></el-icon>
-          <el-icon v-else><MuteNotification /></el-icon>
+    <el-row :gutter="20">
+      <el-col :span="6">
+        <div style="margin-top: 10px">
+          <el-text size="small">{{ currentMusic }}</el-text>
+        </div>
+      </el-col>
+      <el-col :span="2"></el-col>
+      <el-col :span="8">
+        <el-button link type="primary" class="no-shadow" @click="prevSong"
+          ><el-icon><ArrowLeftBold /></el-icon
+        ></el-button>
+        <el-button
+          link
+          type="primary"
+          class="no-shadow"
+          v-if="!isPlaying"
+          @click="recoveryAudio()"
+          ><el-icon size="35px"><VideoPlay /></el-icon
+        ></el-button>
+        <el-button
+          v-else
+          link
+          type="primary"
+          class="no-shadow"
+          @click="pauseAudio()"
+          ><el-icon size="35px"><VideoPause /></el-icon>
         </el-button>
-      </template>
-      <div class="slider-block">
-        <el-slider
-          v-model="volume"
-          :min="0"
-          :max="100"
-          :step="2"
-          size="small"
-          height="140px"
-          @mouseup="changeVolume"
-          @touchend="changeVolume"
-        />
-      </div>
-    </el-popover>
+        <!-- next audio -->
+        <el-button link type="primary" class="no-shadow" @click="nextSong"
+          ><el-icon><ArrowRightBold /></el-icon
+        ></el-button>
+      </el-col>
+      <el-col :span="4"></el-col>
+      <el-col :span="4">
+        <div style="margin-top: 10px">
+          <el-popover placement="top" trigger="hover">
+            <template #reference>
+              <el-button
+                link
+                type="primary"
+                class="no-shadow"
+                @click="toggleMute"
+                ><el-icon v-if="!isMuted"><Bell /></el-icon>
+                <el-icon v-else><MuteNotification /></el-icon>
+              </el-button>
+            </template>
+            <div class="slider-block">
+              <el-slider
+                v-model="volume"
+                :min="0"
+                :max="100"
+                :step="2"
+                size="small"
+                height="140px"
+                @mouseup="changeVolume"
+                @touchend="changeVolume"
+              />
+            </div>
+          </el-popover>
+        </div>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -112,7 +130,7 @@ const playAudio = async (file_name: String) => {
   } catch (error) {
     ElMessage.error(error);
   }
-}
+};
 
 const pauseAudio = async () => {
   isPlaying.value = false;
@@ -122,7 +140,7 @@ const pauseAudio = async () => {
   } catch (error) {
     ElMessage.error(error);
   }
-}
+};
 
 const recoveryAudio = async () => {
   if (currentMusic.value === "") {
@@ -135,7 +153,7 @@ const recoveryAudio = async () => {
   } catch (error) {
     ElMessage.error(error);
   }
-}
+};
 
 const toggleMute = () => {
   if (!isMuted.value) {
