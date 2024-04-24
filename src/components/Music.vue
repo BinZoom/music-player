@@ -33,7 +33,7 @@
       </el-col>
       <el-col :span="2"></el-col>
       <el-col :span="8">
-        <el-button link type="primary" class="no-shadow" @click="prevSong"
+        <el-button link type="primary" class="no-shadow" @click="preAudio"
           ><el-icon><ArrowLeftBold /></el-icon
         ></el-button>
         <el-button
@@ -52,7 +52,7 @@
           @click="pauseAudio()"
           ><el-icon size="35px"><VideoPause /></el-icon>
         </el-button>
-        <el-button link type="primary" class="no-shadow" @click="nextSong"
+        <el-button link type="primary" class="no-shadow" @click="nextAudio"
           ><el-icon><ArrowRightBold /></el-icon
         ></el-button>
       </el-col>
@@ -90,163 +90,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { invoke } from "@tauri-apps/api/tauri";
-import { ElMessage } from "element-plus";
+import * as Music from './Music';
+import { ref, onMounted, onUnmounted } from "vue";
+
 import {
-  CaretRight,
-  ArrowLeftBold,
-  ArrowRightBold,
-  VideoPause,
-  VideoPlay,
-  Bell,
-  MuteNotification,
-  Headset,
+    CaretRight,
+    ArrowLeftBold,
+    ArrowRightBold,
+    VideoPause,
+    VideoPlay,
+    Bell,
+    MuteNotification,
+    Headset,
 } from "@element-plus/icons-vue";
 
-const musicHubPath = ref("E://music/"); // Storage directory
-const isPlaying = ref(false);
-const tableData = ref([]);
-const currAudioName = ref("");
-const currAudioId = ref(1);
-const isMuted = ref(false);
-const volume = ref(50); // Initial volume value
-let originalVolume: number | null = null; // Store the original volume in a non silent state for use during recovery
 
-interface CustomEventPayload {
-  action: "play" | "pause" | "recovery" | "volume";
-  file_path?: string;
-  volume?: number;
-}
+const tableData = Music.tableData;
+const isPlaying = Music.isPlaying;
+const currAudioName = Music.currAudioName;
+const isMuted = Music.isMuted;
+const volume = Music.volume;
 
-const playAudio = async (row: any) => {
-  isPlaying.value = true;
-  currAudioName.value = row.file_name;
-  currAudioId.value = row.id;
-  const file_path = musicHubPath.value + row.file_name;
-  const event: CustomEventPayload = { action: "play", file_path: file_path };
-  try {
-    await invoke("handle_event", { event: JSON.stringify(event) });
-  } catch (error) {
-    ElMessage.error(error);
-  }
-};
-
-const pauseAudio = async () => {
-  isPlaying.value = false;
-  const event: CustomEventPayload = { action: "pause" };
-  try {
-    await invoke("handle_event", { event: JSON.stringify(event) });
-  } catch (error) {
-    ElMessage.error(error);
-  }
-};
-
-const recoveryAudio = async () => {
-  if (currAudioName.value === "") {
-    return;
-  }
-  isPlaying.value = true;
-  const event: CustomEventPayload = { action: "recovery" };
-  try {
-    await invoke("handle_event", { event: JSON.stringify(event) });
-  } catch (error) {
-    ElMessage.error(error);
-  }
-};
-
-const toggleMute = () => {
-  if (!isMuted.value) {
-    // Save volume values before muting
-    originalVolume = volume.value;
-  }
-  isMuted.value = !isMuted.value;
-  // Update volume
-  volume.value = isMuted.value ? 0 : originalVolume ?? volume.value;
-  // 调用后台接口
-  changeVolume();
-};
-
-const changeVolume = async () => {
-  const event: CustomEventPayload = { action: "volume", volume: volume.value };
-  try {
-    await invoke("handle_event", { event: JSON.stringify(event) });
-  } catch (error) {
-    ElMessage.error(error);
-  }
-};
-
-const getFileList = () => {
-  invoke("scan_files_in_directory", {
-    path: musicHubPath.value,
-  }).then((res: any) => {
-    tableData.value = res;
-  });
-};
-
-const prevSong = () => {
-  if (currAudioId.value > 2) {
-    let row = tableData.value[currAudioId.value - 2];
-    playAudio(row);
-  }
-};
-
-const nextSong = async () => {
-  let row = tableData.value[currAudioId.value];
-  playAudio(row);
-};
+const playAudio = Music.playAudio;
+const pauseAudio = Music.pauseAudio;
+const recoveryAudio = Music.recoveryAudio;
+const toggleMute = Music.toggleMute;
+const changeVolume = Music.changeVolume;
+const preAudio = Music.preAudio;
+const nextAudio = Music.nextAudio;
 
 onMounted(() => {
-  getFileList();
+    Music.getFileList();
+
+    // 每秒调用一次 fetchData 函数
+    const intervalId = setInterval(Music.playControl, 1000);
+
+    // 在组件销毁时清除定时器
+    onUnmounted(() => {
+        clearInterval(intervalId);
+    });
 });
 </script>
 
 <style scoped>
-.music-body {
-  flex: 1; /*  fill remaining space */
-  overflow-y: auto;
-}
-
-.music-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 50px;
-  background-color: white;
-}
-
-.no-shadow {
-  box-shadow: none !important;
-}
-
-/* list button dynamic display */
-.el-table tr:hover .hover-visible-button {
-  display: inline-block;
-}
-.hover-visible-button {
-  display: none;
-}
-
-.slider-block {
-  max-width: 150px;
-  display: flex;
-  align-items: center;
-}
-.slider-block .el-slider {
-  margin-top: 0;
-}
-
-/* Hide table borders */
-::v-deep .el-table--border th.el-table__cell,
-::v-deep .el-table td.el-table__cell {
-  border-bottom: none !important;
-}
-::v-deep .el-table--border .el-table__cell {
-  border-right: none !important;
-}
-::v-deep .el-table--group,
-.el-table--border {
-  border: none !important;
-}
+@import './Music.css';
 </style>
