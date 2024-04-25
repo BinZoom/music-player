@@ -2,7 +2,7 @@
   <div class="music-body">
     <el-table
       :data="tableData"
-      style="width: 100%"
+      style="width: 100%; --el-table-border-color: none"
       size="small"
       :show-header="false"
     >
@@ -58,7 +58,7 @@
       </el-col>
       <el-col :span="4"></el-col>
       <el-col :span="4">
-        <div style="margin-top: 10px">
+        <div style="margin-top: 15px">
           <el-popover placement="top" trigger="hover">
             <template #reference>
               <el-button
