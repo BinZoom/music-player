@@ -1,6 +1,8 @@
 # MusicPlayer
 A simple desktop music player application written in Rust. The front end is based on [Tauri](https://github.com/tauri-apps/tauri) (Vue + Typescript), while the backend utilizes [Tokio](https://github.com/tokio-rs/tokio) & [Rodio](https://github.com/RustAudio/rodio).
 
+<img src="screenshots/main_window.png" style="zoom:80%;" />
+
 ### Features:
 - Audio basic controls.
 - Volume adjustment.

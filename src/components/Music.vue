@@ -24,7 +24,8 @@
   </div>
   <div class="music-footer">
     <el-row :gutter="20">
-      <el-col :span="6">
+      <el-col :span="1"></el-col>
+      <el-col :span="5">
         <div style="margin-top: 10px">
           <el-text size="small">
             <el-icon><Headset /></el-icon> {{ currAudioName }}</el-text
